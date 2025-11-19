@@ -153,6 +153,15 @@ class Render {
         thumbnailUrl
       })
     }
+
+    const lgConfig = JSON.parse(JSON.stringify(getConfigOption('lightGallery', {})))
+    if (!canDownload(share)) {
+      lgConfig.download = false
+      if (lgConfig.mobileSettings) {
+        lgConfig.mobileSettings.download = false
+      }
+    }
+
     res.render('gallery', {
       items,
       openItem,
@@ -161,7 +170,7 @@ class Render {
       path: '/share/' + share.key,
       showDownload: canDownload(share),
       showTitle: getConfigOption('ipp.showGalleryTitle', false),
-      lgConfig: getConfigOption('lightGallery', {})
+      lgConfig
     })
   }
 
