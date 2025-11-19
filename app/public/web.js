@@ -7,8 +7,7 @@ class LGallery {
   static MASONRY_CONFIG = {
     itemSelector:   '.grid-item',
     percentPosition: true,
-    gutter:          0,
-    columnWidth:     '.grid-item:first-of-type'
+    gutter:          0
   };
 
   // — Instance properties —
@@ -49,11 +48,7 @@ class LGallery {
     this.items   = items;
     this.element = document.getElementById('lightgallery');
 
-    // set up Masonry
-    this.masonry = new Masonry(this.element, LGallery.MASONRY_CONFIG);
-    this.masonry.layout();
-
-    // set up lightGallery
+    // set up lightGallery FIRST
     this.lightGallery = lightGallery(
       this.element,
       Object.assign({
@@ -68,6 +63,12 @@ class LGallery {
         zoomFromOrigin:         true
       }, lgConfig)
     );
+
+    // Initialize Masonry and layout after images load
+    imagesLoaded(this.element, () => {
+      this.masonry = new Masonry(this.element, LGallery.MASONRY_CONFIG);
+      this.masonry.layout();
+    });
 
     // scroll listener with inline debounce
     let timeout;
@@ -136,9 +137,13 @@ class LGallery {
     this.element.append(fragment);
 
     // Tell Masonry about the new items, then wait for images and layout → refresh
-    this.masonry.appended(newItems);
+    if (this.masonry) {
+      this.masonry.appended(newItems);
+    }
     imagesLoaded(newItems, () => {
-      this.masonry.layout();
+      if (this.masonry) {
+        this.masonry.layout();
+      }
       this.lightGallery.refresh();
 
       // Hide bottom loader
@@ -153,4 +158,4 @@ class LGallery {
   }
 }
 
-const lgallery = new LGallery();
+window.lgallery = new LGallery();
