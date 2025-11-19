@@ -59,7 +59,7 @@ To view a shared album in Immich, you need access to the `/api/` path. If you're
 to make that path public. Any existing or future vulnerability has the potential to compromise your Immich instance.
 
 For me, the ideal setup is to have Immich secured privately behind mTLS or VPN, and only allow public access to Immich Public Proxy.
-Here is an example setup for [securing Immich behind mTLS](./docs/securing-immich-with-mtls.md) using Caddy.
+Here is an example setup for [securing Immich behind mTLS](./docs/securing-immich-with-mtls.md) using a reverse proxy such as Caddy or Traefik.
 
 ## Installation
 
@@ -72,14 +72,17 @@ Here is an example setup for [securing Immich behind mTLS](./docs/securing-immic
 3. Update or remove the value for `PUBLIC_BASE_URL`. This should be the public base URL for IPP, without a trailing slash (example `https://your-proxy-url.com`). 
 If you remove this value, it will dynamically generate it based on the request hostname. This can be useful if you are [serving from multiple domains](#serving-from-multiple-domains).
 
-4. Start the docker container. You can test that it is working by visiting `https://your-proxy-url.com/share/healthcheck`. 
+4. _Optional_: Add `IPP_PORT` to environment variables in your docker-compose file to change the port from the default of 3000. 
+This is the _internal_ webserver port inside the container. Most people will not need to do this. Note that you will have to change the `ports` and `healthcheck` sections accordingly.
+
+5. Start the docker container. You can test that it is working by visiting `https://your-proxy-url.com/share/healthcheck`. 
 Check the container console output for any error messages.
 
 ```bash
 docker-compose up -d
 ```
 
-4. Set the "External domain" in your Immich **Server Settings** to be whatever domain you use to publicly serve Immich Public Proxy:
+5. Set the "External domain" in your Immich **Server Settings** to be whatever domain you use to publicly serve Immich Public Proxy:
 
 <img src="docs/server-settings.png" width="400" height="182">
 
@@ -146,17 +149,18 @@ Alternatively, you can [pass the configuration inline](docs/inline-configuration
 
 ### Immich Public Proxy options
 
-| Option                  | Type     | Description                                                                                                                                                                                                                       |
-|-------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `responseHeaders`       | `object` | Change the headers sent with your web responses. By default there is `cache-control` and CORS added.                                                                                                                              |
-| `singleImageGallery`    | `bool`   | By default a link to a single image will directly open the image file. Set to `true` if you want to show a gallery page instead for a single item.                                                                                |
-| `downloadOriginalPhoto` | `bool`   | Set to `false` if you only want people to be able to download the 'preview' quality photo, rather than your original photo.                                                                                                       |
-| `showGalleryTitle`      | `bool`   | Show a title on the gallery page.                                                                                                                                                                                                 |
-| `allowDownloadAll`      | `int`    | Allow visitors to download all files as a zip.<br>`0` disable downloads<br>`1` follow Immich setting per share ([example](https://github.com/user-attachments/assets/79ea8c08-71ce-42ab-b025-10aec384938a))<br>`2` always allowed |
-| `allowSlugLinks`        | `bool`   | Enable/disable the custom URL links.                                                                                                                                                                                              |
-| `showHomePage`          | `bool`   | Set to `false` to remove the IPP shield page at `/` and at `/share`                                                                                                                                                               |
-| `showMetadata`          | `object` | See the [Metadata](#metadata) section below.                                                                                                                                                                                      |
-| `customInvalidResponse` | various  | Send a custom response instead of the default 404 - see [Custom responses](docs/custom-responses.md) for more details.                                                                                                            |
+| Option                  | Type     | Description                                                                                                                                                                                                                                                       |
+|-------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `responseHeaders`       | `object` | Change the headers sent with your web responses. By default there is `cache-control` and CORS added.                                                                                                                                                              |
+| `singleImageGallery`    | `bool`   | By default a link to a single image will directly open the image file. Set to `true` if you want to show a gallery page instead for a single item.                                                                                                                |
+| `downloadOriginalPhoto` | `bool`   | Set to `false` if you only want people to be able to download the 'preview' quality photo, rather than your original photo.                                                                                                                                       |
+| `downloadedFilename`    | `int`    | The filename of the downloaded image.<br>`0` for the original filename if available, falling back to the Immich asset ID<br>`1` for the Immich asset ID number<br>`2` for a sanitised version of the asset ID: `img_` plus the first 8 characters of the asset ID |
+| `showGalleryTitle`      | `bool`   | Show a title on the gallery page.                                                                                                                                                                                                                                 |
+| `allowDownloadAll`      | `int`    | Allow visitors to download all files as a zip.<br>`0` disable downloads<br>`1` follow Immich setting per share ([example](https://github.com/user-attachments/assets/79ea8c08-71ce-42ab-b025-10aec384938a))<br>`2` always allowed                                 |
+| `allowSlugLinks`        | `bool`   | Enable/disable the custom URL links.                                                                                                                                                                                                                              |
+| `showHomePage`          | `bool`   | Set to `false` to remove the IPP shield page at `/` and at `/share`                                                                                                                                                                                               |
+| `showMetadata`          | `object` | See the [Metadata](#metadata) section below.                                                                                                                                                                                                                      |
+| `customInvalidResponse` | various  | Send a custom response instead of the default 404 - see [Custom responses](docs/custom-responses.md) for more details.                                                                                                                                            |
 
 For example, to disable the home page at `/` and at `/share` you need to change `showHomePage` to `false`:
 
